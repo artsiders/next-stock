@@ -10,7 +10,7 @@ export default async function NewProjectPage() {
     const suppliers = await getSuppliers();
     return (
         <div className="container mx-auto py-10">
-            <Link href="/projects">
+            <Link href="/produits">
                 <Button variant="ghost" className="mb-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Retour aux projets
