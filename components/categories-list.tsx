@@ -15,22 +15,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { deleteProduct } from "@/lib/actions"
-import { Product } from "@prisma/client"
+import { deleteCategory } from "@/lib/actions"
+import { Category } from "@prisma/client"
 
-export default function ProductList({ products }: { products: Product[] }) {
+export default function CategoriesList({ categories }: { categories: Category[] }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [productToDelete, setProductToDelete] = useState<number | null>(null)
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null)
 
   const handleDelete = async () => {
-    if (productToDelete) {
-      await deleteProduct(productToDelete)
+    if (categoryToDelete) {
+      await deleteCategory(categoryToDelete)
       setIsDeleteDialogOpen(false)
     }
   }
 
   const openDeleteDialog = (id: number) => {
-    setProductToDelete(id)
+    setCategoryToDelete(id)
     setIsDeleteDialogOpen(true)
   }
 
@@ -41,35 +41,29 @@ export default function ProductList({ products }: { products: Product[] }) {
           <TableRow>
             <TableHead>ID</TableHead>
             <TableHead>Nom</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Quantité</TableHead>
-            <TableHead>Prix unitaire</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products?.length === 0 ? (
+          {categories?.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center">
-                Aucun produit trouvé
+              <TableCell colSpan={3} className="text-center">
+                Aucune categorie trouvé
               </TableCell>
             </TableRow>
           ) : (
-            products?.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell>{product.id}</TableCell>
-                <TableCell>{product.name}</TableCell>
-                <TableCell>{product.description}</TableCell>
-                <TableCell>{product.quantity}</TableCell>
-                <TableCell>{product.unitPrice}</TableCell>
+            categories?.map((category) => (
+              <TableRow key={category.id}>
+                <TableCell>{category.id}</TableCell>
+                <TableCell>{category.name}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Link href={`/products/${product.id}`}>
+                    <Link href={`/categories/${category.id}`}>
                       <Button variant="outline" size="icon">
                         <Edit className="h-4 w-4" />
                       </Button>
                     </Link>
-                    <Button variant="outline" size="icon" onClick={() => openDeleteDialog(product.id)}>
+                    <Button variant="outline" size="icon" onClick={() => openDeleteDialog(category.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -85,7 +79,7 @@ export default function ProductList({ products }: { products: Product[] }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action ne peut pas être annulée. Cela supprimera définitivement le produit.
+              Cette action ne peut pas être annulée. Cela supprimera définitivement la categorie.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
