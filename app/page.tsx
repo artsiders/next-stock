@@ -7,7 +7,7 @@ export default function Home() {
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-8 text-center">Nest-Stock</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-        <Link href="/projects" className="w-full">
+        <Link href="/products" className="w-full">
           <Button variant="outline" className="w-full h-32 flex flex-col gap-2">
             <Folder className="h-8 w-8" />
             <span className="text-lg">Gérer les Projets</span>

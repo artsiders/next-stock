@@ -1,11 +1,9 @@
 "use client"
 
-import type { Project } from "@prisma/client"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2 } from "lucide-react"
 import Link from "next/link"
-import { deleteProject } from "@/lib/actions"
 import { useState } from "react"
 import {
   AlertDialog,
@@ -17,20 +15,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { deleteProduit, ProduitCreate } from "@/lib/actions"
 
-export default function ProjectList({ projects }: { projects: Project[] }) {
+export default function ProductList({ products }: { products: ProduitCreate[] }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [projectToDelete, setProjectToDelete] = useState<number | null>(null)
+  const [productToDelete, setProductToDelete] = useState<number | null>(null)
 
   const handleDelete = async () => {
-    if (projectToDelete) {
-      await deleteProject(projectToDelete)
+    if (productToDelete) {
+      await deleteProduit(productToDelete)
       setIsDeleteDialogOpen(false)
     }
   }
 
   const openDeleteDialog = (id: number) => {
-    setProjectToDelete(id)
+    setProductToDelete(id)
     setIsDeleteDialogOpen(true)
   }
 
@@ -46,26 +45,26 @@ export default function ProjectList({ projects }: { projects: Project[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {projects.length === 0 ? (
+          {products.length === 0 ? (
             <TableRow>
               <TableCell colSpan={4} className="text-center">
                 Aucun projet trouvé
               </TableCell>
             </TableRow>
           ) : (
-            projects.map((project) => (
-              <TableRow key={project.id}>
-                <TableCell>{project.id}</TableCell>
-                <TableCell>{project.name}</TableCell>
-                <TableCell>{project.description}</TableCell>
+            products.map((product) => (
+              <TableRow key={product.categorieId}>
+                <TableCell>{product.categorieId}</TableCell>
+                <TableCell>{product.nom}</TableCell>
+                <TableCell>{product.description}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Link href={`/projects/${project.id}`}>
+                    <Link href={`/products/${product.categorieId}`}>
                       <Button variant="outline" size="icon">
                         <Edit className="h-4 w-4" />
                       </Button>
                     </Link>
-                    <Button variant="outline" size="icon" onClick={() => openDeleteDialog(project.id)}>
+                    <Button variant="outline" size="icon" onClick={() => openDeleteDialog(product.categorieId)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

@@ -1,18 +1,10 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import ProjectForm from "@/components/project-form"
+import ProjectForm from "@/components/product-form"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import { getProjectById } from "@/lib/data"
-import { notFound } from "next/navigation"
 
-export default async function EditProjectPage({ params }: { params: { id: string } }) {
-  const project = await getProjectById(Number.parseInt(params.id))
-
-  if (!project) {
-    notFound()
-  }
-
+export default function NewProjectPage() {
   return (
     <div className="container mx-auto py-10">
       <Link href="/projects">
@@ -23,10 +15,10 @@ export default async function EditProjectPage({ params }: { params: { id: string
       </Link>
       <Card>
         <CardHeader>
-          <CardTitle>Modifier Projet</CardTitle>
+          <CardTitle>Nouveau Projet</CardTitle>
         </CardHeader>
         <CardContent>
-          <ProjectForm project={project} />
+          <ProjectForm />
         </CardContent>
       </Card>
     </div>
