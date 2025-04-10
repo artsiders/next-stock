@@ -15,15 +15,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { deleteProduit, ProduitCreate } from "@/lib/actions"
+import { deleteProduct } from "@/lib/actions"
+import { Product } from "@prisma/client"
 
-export default function ProductList({ products }: { products: ProduitCreate[] }) {
+export default function ProductList({ products }: { products: Product[] }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<number | null>(null)
 
   const handleDelete = async () => {
     if (productToDelete) {
-      await deleteProduit(productToDelete)
+      await deleteProduct(productToDelete)
       setIsDeleteDialogOpen(false)
     }
   }
@@ -41,30 +42,34 @@ export default function ProductList({ products }: { products: ProduitCreate[] })
             <TableHead>ID</TableHead>
             <TableHead>Nom</TableHead>
             <TableHead>Description</TableHead>
+            <TableHead>Quantité</TableHead>
+            <TableHead>Prix unitaire</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products.length === 0 ? (
+          {products?.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center">
+              <TableCell colSpan={6} className="text-center">
                 Aucun projet trouvé
               </TableCell>
             </TableRow>
           ) : (
-            products.map((product) => (
-              <TableRow key={product.categorieId}>
-                <TableCell>{product.categorieId}</TableCell>
-                <TableCell>{product.nom}</TableCell>
+            products?.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell>{product.id}</TableCell>
+                <TableCell>{product.name}</TableCell>
                 <TableCell>{product.description}</TableCell>
+                <TableCell>{product.quantity}</TableCell>
+                <TableCell>{product.unitPrice}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Link href={`/products/${product.categorieId}`}>
+                    <Link href={`/products/${product.id}`}>
                       <Button variant="outline" size="icon">
                         <Edit className="h-4 w-4" />
                       </Button>
                     </Link>
-                    <Button variant="outline" size="icon" onClick={() => openDeleteDialog(product.categorieId)}>
+                    <Button variant="outline" size="icon" onClick={() => openDeleteDialog(product.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
