@@ -29,7 +29,6 @@ export default function NewCategoryForm() {
     }));
   };
 
-  // Soumission du formulaire
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

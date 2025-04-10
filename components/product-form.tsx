@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { Category, Supplier } from "@prisma/client";
 import { createProduct } from "@/lib/actions";
+import axios from "axios";
 
 interface Props {
   categories: Category[];
@@ -74,13 +75,15 @@ export default function NewProductForm({ categories, suppliers }: Props) {
     setError("");
 
     try {
-      // Utilisation directe de la fonction createProduct du fichier action.ts
-      await createProduct(formData);
-
-      // Rediriger vers la page des produits
+      await axios.post("/api/products", formData);
       router.push("/products");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      if (axios.isAxiosError(err)) {
+        setError("Une erreur est survenue");
+        console.log(err.response?.data?.error);
+      } else {
+        setError("Une erreur inconnue est survenue");
+      }
     } finally {
       setLoading(false);
     }
