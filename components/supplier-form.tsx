@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import axios from "axios"
 
-export default function NewCategoryForm() {
+export default function NewSupplierForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -18,6 +18,8 @@ export default function NewCategoryForm() {
   // État du formulaire
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
+    phone: "",
   });
 
   // Gérer les changements des champs
@@ -35,14 +37,12 @@ export default function NewCategoryForm() {
     setError("");
 
     try {
-      await axios.post("/api/categories", formData);
-      router.push("/categories");
+      await axios.post("/api/suppliers", formData);
+      router.push("/fournisseurs");
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError("Une erreur est survenue");
-
         console.log(err.response?.data?.error);
-
       } else {
         setError("Une erreur inconnue est survenue");
       }
@@ -61,11 +61,31 @@ export default function NewCategoryForm() {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="name">Nom de la catégorie *</Label>
+        <Label htmlFor="name">Nom du formisseur *</Label>
         <Input
           id="name"
           name="name"
           value={formData.name}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="email">Email du formisseur *</Label>
+        <Input
+          id="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="phone">Téléphone du formisseur *</Label>
+        <Input
+          id="phone"
+          name="phone"
+          value={formData.phone}
           onChange={handleChange}
           required
         />
@@ -80,7 +100,7 @@ export default function NewCategoryForm() {
           Annuler
         </Button>
         <Button type="submit" disabled={loading}>
-          {loading ? "Création en cours..." : "Créer la catégorie"}
+          {loading ? "Création en cours..." : "Créer le Fournisseur"}
         </Button>
       </div>
     </form>
