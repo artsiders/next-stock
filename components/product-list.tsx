@@ -64,7 +64,7 @@ export default function ProductList({ products }: { products: Product[] }) {
                 <TableCell>{product.unitPrice}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Link href={`/products/${product.id}`}>
+                    <Link href={`/produits/${product.id}`}>
                       <Button variant="outline" size="icon">
                         <Edit className="h-4 w-4" />
                       </Button>

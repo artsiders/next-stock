@@ -9,50 +9,67 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-import { Category, Supplier } from "@prisma/client";
+import { Category, Product, Supplier } from "@prisma/client";
 import axios from "axios";
 
 interface Props {
   categories: Category[];
   suppliers: Supplier[];
+  product?: Product;
 }
 
-export default function NewProductForm({ categories, suppliers }: Props) {
+interface FormErrors {
+  name?: string;
+  categoryId?: string;
+  supplierId?: string;
+  quantity?: string;
+  minQuantity?: string;
+  unitPrice?: string;
+  costPrice?: string;
+}
+
+export default function ProductForm({ product, categories, suppliers }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const isEditMode = !!product;
 
   // État du formulaire
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    categoryId: 0,
-    supplierId: 0,
-    quantity: 0,
-    minQuantity: 5,
-    unitPrice: 0,
-    costPrice: 0,
+    name: product?.name || "",
+    description: product?.description || "",
+    categoryId: product?.categoryId || 0,
+    supplierId: product?.supplierId || 0,
+    quantity: product?.quantity || 0,
+    minQuantity: product?.minQuantity || 5,
+    unitPrice: product?.unitPrice || 0,
+    costPrice: product?.costPrice || 0,
   });
 
   // Charger les catégories et fournisseurs au chargement
   useEffect(() => {
-    const loadData = async () => {
-
-      if (categories.length > 0) {
+    if (!isEditMode) {
+      if (categories.length > 0 && formData.categoryId === 0) {
         setFormData(prev => ({ ...prev, categoryId: categories[0].id }));
       }
 
-      if (suppliers.length > 0) {
+      if (suppliers.length > 0 && formData.supplierId === 0) {
         setFormData(prev => ({ ...prev, supplierId: suppliers[0].id }));
       }
-    };
-
-    loadData();
-  }, []);
+    }
+  }, [categories, suppliers, isEditMode, formData.categoryId, formData.supplierId]);
 
   // Gérer les changements des champs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+
+    // Effacer l'erreur correspondante lorsqu'un champ est modifié
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: ["quantity", "minQuantity", "unitPrice", "costPrice"].includes(name)
@@ -63,22 +80,85 @@ export default function NewProductForm({ categories, suppliers }: Props) {
 
   // Gérer les changements des sélecteurs
   const handleSelectChange = (name: string, value: string) => {
+    // Effacer l'erreur correspondante
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+
     setFormData(prev => ({ ...prev, [name]: parseInt(value, 10) }));
+  };
+
+  // Valider le formulaire
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    // Validation du nom
+    if (!formData.name.trim()) {
+      newErrors.name = "Le nom du produit est requis";
+    } else if (formData.name.length < 2) {
+      newErrors.name = "Le nom doit contenir au moins 2 caractères";
+    }
+
+    // Validation de la catégorie
+    if (formData.categoryId === 0) {
+      newErrors.categoryId = "Veuillez sélectionner une catégorie";
+    }
+
+    // Validation du fournisseur
+    if (formData.supplierId === 0) {
+      newErrors.supplierId = "Veuillez sélectionner un fournisseur";
+    }
+
+    // Validation des prix
+    if (formData.costPrice <= 0) {
+      newErrors.costPrice = "Le prix d'achat doit être supérieur à 0";
+    }
+
+    if (formData.unitPrice <= 0) {
+      newErrors.unitPrice = "Le prix de vente doit être supérieur à 0";
+    } else if (formData.unitPrice < formData.costPrice) {
+      newErrors.unitPrice = "Le prix de vente doit être supérieur ou égal au prix d'achat";
+    }
+
+    // Validation de la quantité
+    if (formData.quantity < 0) {
+      newErrors.quantity = "La quantité ne peut pas être négative";
+    }
+
+    if (formData.minQuantity < 0) {
+      newErrors.minQuantity = "Le seuil d'alerte ne peut pas être négatif";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Soumission du formulaire
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Valider le formulaire avant soumission
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      await axios.post("/api/products", formData);
-      router.push("/produits");
+      if (isEditMode) {
+        // Mise à jour d'un produit existant
+        await axios.put(`/api/products/${product.id}`, formData);
+        window.history.back();
+      } else {
+        // Création d'un nouveau produit
+        await axios.post("/api/products", formData);
+        window.history.back();
+      }
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError("Une erreur est survenue");
-        console.log(err.response?.data?.error);
+        setError(err.response?.data?.error || "Une erreur est survenue lors de l'enregistrement");
+        console.error(err.response?.data?.error);
       } else {
         setError("Une erreur inconnue est survenue");
       }
@@ -106,8 +186,11 @@ export default function NewProductForm({ categories, suppliers }: Props) {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              required
+              className={errors.name ? "border-red-500" : ""}
             />
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -130,7 +213,7 @@ export default function NewProductForm({ categories, suppliers }: Props) {
               value={formData.categoryId !== 0 ? formData.categoryId.toString() : undefined}
               onValueChange={(value) => handleSelectChange("categoryId", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className={errors.categoryId ? "border-red-500" : ""}>
                 <SelectValue placeholder="Sélectionner une catégorie" />
               </SelectTrigger>
               <SelectContent>
@@ -141,6 +224,9 @@ export default function NewProductForm({ categories, suppliers }: Props) {
                 ))}
               </SelectContent>
             </Select>
+            {errors.categoryId && (
+              <p className="text-red-500 text-sm mt-1">{errors.categoryId}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -149,7 +235,7 @@ export default function NewProductForm({ categories, suppliers }: Props) {
               value={formData.supplierId !== 0 ? formData.supplierId.toString() : undefined}
               onValueChange={(value) => handleSelectChange("supplierId", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className={errors.supplierId ? "border-red-500" : ""}>
                 <SelectValue placeholder="Sélectionner un fournisseur" />
               </SelectTrigger>
               <SelectContent>
@@ -160,6 +246,9 @@ export default function NewProductForm({ categories, suppliers }: Props) {
                 ))}
               </SelectContent>
             </Select>
+            {errors.supplierId && (
+              <p className="text-red-500 text-sm mt-1">{errors.supplierId}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -173,8 +262,11 @@ export default function NewProductForm({ categories, suppliers }: Props) {
                 min="0"
                 value={formData.costPrice}
                 onChange={handleChange}
-                required
+                className={errors.costPrice ? "border-red-500" : ""}
               />
+              {errors.costPrice && (
+                <p className="text-red-500 text-sm mt-1">{errors.costPrice}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -187,8 +279,11 @@ export default function NewProductForm({ categories, suppliers }: Props) {
                 min="0"
                 value={formData.unitPrice}
                 onChange={handleChange}
-                required
+                className={errors.unitPrice ? "border-red-500" : ""}
               />
+              {errors.unitPrice && (
+                <p className="text-red-500 text-sm mt-1">{errors.unitPrice}</p>
+              )}
             </div>
           </div>
 
@@ -202,8 +297,11 @@ export default function NewProductForm({ categories, suppliers }: Props) {
                 min="0"
                 value={formData.quantity}
                 onChange={handleChange}
-                required
+                className={errors.quantity ? "border-red-500" : ""}
               />
+              {errors.quantity && (
+                <p className="text-red-500 text-sm mt-1">{errors.quantity}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -215,7 +313,11 @@ export default function NewProductForm({ categories, suppliers }: Props) {
                 min="0"
                 value={formData.minQuantity}
                 onChange={handleChange}
+                className={errors.minQuantity ? "border-red-500" : ""}
               />
+              {errors.minQuantity && (
+                <p className="text-red-500 text-sm mt-1">{errors.minQuantity}</p>
+              )}
             </div>
           </div>
         </div>
@@ -230,7 +332,7 @@ export default function NewProductForm({ categories, suppliers }: Props) {
           Annuler
         </Button>
         <Button type="submit" disabled={loading}>
-          {loading ? "Création en cours..." : "Créer le produit"}
+          {loading ? (isEditMode ? "Mise à jour..." : "Création en cours...") : (isEditMode ? "Mettre à jour" : "Créer le produit")}
         </Button>
       </div>
     </form>
