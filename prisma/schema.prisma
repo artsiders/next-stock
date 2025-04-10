@@ -28,7 +28,9 @@ model Product {
   name        String
   description String?
   quantity    Int      @default(0)
+  minQuantity Int      @default(5)
   unitPrice   Float
+  costPrice   Float
   categoryId  Int
   supplierId  Int
   createdAt   DateTime @default(now())

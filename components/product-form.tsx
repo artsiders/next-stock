@@ -10,7 +10,6 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { Category, Supplier } from "@prisma/client";
-import { createProduct } from "@/lib/actions";
 import axios from "axios";
 
 interface Props {
@@ -33,7 +32,6 @@ export default function NewProductForm({ categories, suppliers }: Props) {
     minQuantity: 5,
     unitPrice: 0,
     costPrice: 0,
-    location: "",
   });
 
   // Charger les catégories et fournisseurs au chargement
@@ -76,7 +74,7 @@ export default function NewProductForm({ categories, suppliers }: Props) {
 
     try {
       await axios.post("/api/products", formData);
-      router.push("/products");
+      router.push("/produits");
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError("Une erreur est survenue");
@@ -119,18 +117,7 @@ export default function NewProductForm({ categories, suppliers }: Props) {
               name="description"
               value={formData.description || ""}
               onChange={handleChange}
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Emplacement</Label>
-            <Input
-              id="location"
-              name="location"
-              value={formData.location || ""}
-              onChange={handleChange}
-              placeholder="Ex: Étagère A-12"
+              rows={10}
             />
           </div>
         </div>
