@@ -15,8 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { deleteProduct } from "@/lib/actions"
 import { Product } from "@prisma/client"
+import axios from "axios"
 
 export default function ProductList({ products }: { products: Product[] }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -24,11 +24,14 @@ export default function ProductList({ products }: { products: Product[] }) {
 
   const handleDelete = async () => {
     if (productToDelete) {
-      await deleteProduct(productToDelete)
-      setIsDeleteDialogOpen(false)
+      try {
+        await axios.delete(`/api/products/${productToDelete}`);
+        setIsDeleteDialogOpen(false);
+      } catch (error) {
+        console.error('Erreur lors de la suppression du produit:', error);
+      }
     }
   }
-
   const openDeleteDialog = (id: number) => {
     setProductToDelete(id)
     setIsDeleteDialogOpen(true)
