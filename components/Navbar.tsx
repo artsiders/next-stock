@@ -19,10 +19,23 @@ export default function Navbar() {
 
     return (
         <div className="flex justify-between">
-            <h1 className="text-2xl font-bold mb-8 text-center text-blue-500 flex items-center gap-2">
-                <HomeIcon />
-                Nest Stock
-            </h1>
+            <NavigationMenu className="flex justify-end mb-8">
+                <NavigationMenuList className="flex gap-4">
+                    <NavigationMenuItem>
+                        <NavigationMenuLink asChild>
+                            <Link href={"/"}>
+                                <Button
+                                    variant={"default"}
+                                    className={`flex gap-2 items-center bg-blue-500 text-white`}
+                                >
+                                    <HomeIcon className="w-5 h-5" />
+                                    Nest Stock
+                                </Button>
+                            </Link>
+                        </NavigationMenuLink>
+                    </NavigationMenuItem>
+                </NavigationMenuList>
+            </NavigationMenu>
 
             {/* Navigation Radix UI */}
             <NavigationMenu className="flex justify-end mb-8">
