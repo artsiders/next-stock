@@ -1,10 +1,7 @@
 import type { Metadata } from 'next'
 import NextTopLoader from 'nextjs-toploader';
-import Link from "next/link"
-import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from "@radix-ui/react-navigation-menu"
-import { Button } from "@/components/ui/button"
-import { Package, Folder, Truck, HomeIcon } from "lucide-react"
 import './globals.css'
+import Navbar from '@/components/Navbar';
 
 export const metadata: Metadata = {
   title: 'nest-stock',
@@ -34,75 +31,7 @@ export default function RootLayout({
           showAtBottom={false}
         />
         <div className="container mx-auto py-10">
-          <div className="flex justify-between">
-            <h1 className="text-2xl font-bold mb-8 text-center text-blue-500 flex items-center gap-2"><HomeIcon />Nest Stock</h1>
-
-            {/* Navigation Radix UI */}
-            <NavigationMenu className="flex justify-end mb-8">
-              <NavigationMenuList className="flex gap-4">
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link href="/">
-                      <Button variant="outline" className="flex gap-2 items-center">
-                        <Folder className="w-5 h-5" />
-                        Statistics
-                      </Button>
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link href="/approvisionnements">
-                      <Button variant="outline" className="flex gap-2 items-center">
-                        <Folder className="w-5 h-5" />
-                        approvisionnements
-                      </Button>
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link href="/sorties-stock">
-                      <Button variant="outline" className="flex gap-2 items-center">
-                        <Folder className="w-5 h-5" />
-                        sorties stock
-                      </Button>
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link href="/produits">
-                      <Button variant="outline" className="flex gap-2 items-center">
-                        <Folder className="w-5 h-5" />
-                        Produits
-                      </Button>
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link href="/categories">
-                      <Button variant="outline" className="flex gap-2 items-center">
-                        <Package className="w-5 h-5" />
-                        Catégories
-                      </Button>
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link href="/fournisseurs">
-                      <Button variant="outline" className="flex gap-2 items-center">
-                        <Truck className="w-5 h-5" />
-                        Fournisseurs
-                      </Button>
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-          </div>
+          <Navbar />
           {children}
         </div>
       </body>
