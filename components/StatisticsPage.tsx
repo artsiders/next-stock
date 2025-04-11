@@ -227,7 +227,7 @@ export default function StatisticsPage() {
                                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{valueStats.totalValue.toLocaleString('fr-FR')} €</div>
+                                <div className="text-2xl font-bold">{valueStats.totalValue.toLocaleString('fr-FR')} F</div>
                                 <p className="text-xs text-muted-foreground">
                                     au prix d'achat
                                 </p>
@@ -240,7 +240,7 @@ export default function StatisticsPage() {
                                 <ArrowDown className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{valueStats.averageCost.toFixed(2).replace('.', ',').toLocaleString()} €</div>
+                                <div className="text-2xl font-bold">{valueStats.averageCost.toFixed(2).replace('.', ',').toLocaleString()} F</div>
                                 <p className="text-xs text-muted-foreground">
                                     prix d'achat moyen
                                 </p>
@@ -253,7 +253,7 @@ export default function StatisticsPage() {
                                 <ArrowUp className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{valueStats.potentialRevenue.toLocaleString('fr-FR')} €</div>
+                                <div className="text-2xl font-bold">{valueStats.potentialRevenue.toLocaleString('fr-FR')} F</div>
                                 <p className="text-xs text-muted-foreground">
                                     au prix de vente
                                 </p>
@@ -266,7 +266,7 @@ export default function StatisticsPage() {
                                 <TrendingUp className="h-4 w-4 text-green-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{valueStats.margin.toLocaleString('fr-FR')} €</div>
+                                <div className="text-2xl font-bold">{valueStats.margin.toLocaleString('fr-FR')} F</div>
                                 <p className="text-xs text-muted-foreground">
                                     ({((valueStats.margin / valueStats.totalValue) * 100).toFixed(1).replace('.', ',')}%)
                                 </p>
@@ -349,7 +349,7 @@ export default function StatisticsPage() {
                                 <CardHeader>
                                     <CardTitle>Valeur par catégorie</CardTitle>
                                     <CardDescription>
-                                        Valeur du stock par catégorie (en €)
+                                        Valeur du stock par catégorie (en F)
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="pt-2">
@@ -359,7 +359,7 @@ export default function StatisticsPage() {
                                                 <CartesianGrid strokeDasharray="3 3" />
                                                 <XAxis dataKey="name" />
                                                 <YAxis />
-                                                <Tooltip formatter={(value) => `${Number(value).toLocaleString('fr-FR')} €`} />
+                                                <Tooltip formatter={(value) => `${Number(value).toLocaleString('fr-FR')} F`} />
                                                 <Bar dataKey="value" fill="#0088FE" name="Valeur (€)">
                                                     {categoryStats.map((entry, index) => (
                                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
