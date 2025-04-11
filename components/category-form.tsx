@@ -9,15 +9,18 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import axios from "axios"
+import { Category } from "@prisma/client";
 
-export default function NewCategoryForm() {
+export default function NewCategoryForm({ category }: { category?: Category }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const isEditMode = !!category;
+
   // État du formulaire
   const [formData, setFormData] = useState({
-    name: "",
+    name: category?.name || "",
   });
 
   // Gérer les changements des champs
@@ -35,14 +38,17 @@ export default function NewCategoryForm() {
     setError("");
 
     try {
-      await axios.post("/api/categories", formData);
-      router.push("/categories");
+      if (isEditMode) {
+        await axios.put(`/api/categories/${category.id}`, formData);
+        window.history.back();
+      } else {
+        await axios.post("/api/categories", formData);
+        window.history.back();
+      }
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError("Une erreur est survenue");
-
-        console.log(err.response?.data?.error);
-
+        setError("Une erreur est survenue lors de l'enregistrement");
+        console.error(err.response?.data?.error);
       } else {
         setError("Une erreur inconnue est survenue");
       }
@@ -80,7 +86,7 @@ export default function NewCategoryForm() {
           Annuler
         </Button>
         <Button type="submit" disabled={loading}>
-          {loading ? "Création en cours..." : "Créer la catégorie"}
+          {loading ? (isEditMode ? "Mise à jour..." : "Création en cours...") : (isEditMode ? "Mettre à jour" : "Créer la catégorie")}
         </Button>
       </div>
     </form>

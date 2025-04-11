@@ -62,7 +62,7 @@ export default function ProductList({ products }: { products: Product[] }) {
               <TableRow key={product.id}>
                 <TableCell>{product.id}</TableCell>
                 <TableCell>{product.name}</TableCell>
-                <TableCell>{product.description}</TableCell>
+                <TableCell className="max-w-60 line-clamp-1">{product.description}</TableCell>
                 <TableCell>{product.quantity}</TableCell>
                 <TableCell>{product.unitPrice}</TableCell>
                 <TableCell className="text-right">

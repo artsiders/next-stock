@@ -15,8 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { deleteCategory } from "@/lib/actions"
 import { Category } from "@prisma/client"
+import axios from "axios"
 
 export default function CategoriesList({ categories }: { categories: Category[] }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -24,8 +24,12 @@ export default function CategoriesList({ categories }: { categories: Category[] 
 
   const handleDelete = async () => {
     if (categoryToDelete) {
-      await deleteCategory(categoryToDelete)
-      setIsDeleteDialogOpen(false)
+      try {
+        await axios.delete(`/api/categories/${categoryToDelete}`);
+        setIsDeleteDialogOpen(false);
+      } catch (error) {
+        console.error('Erreur lors de la suppression de la categorie:', error);
+      }
     }
   }
 
