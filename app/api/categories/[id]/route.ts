@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function PUT(request: Request, context: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
     try {
-        const { id } = context.params;
+        const { id } = params;
         const data = await request.json();
 
         const updatedCategory = await prisma.category.update({
@@ -20,15 +20,16 @@ export async function PUT(request: Request, context: { params: { id: string } })
     }
 }
 
-export async function DELETE(request: Request, context: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
     try {
-        const { id } = context.params;
+        const { id } = params; // Pas besoin d'attendre avec await pour params
 
+        // Suppression du produit dans la base de données
         const deletedProduct = await prisma.category.delete({
             where: { id: parseInt(id) },
         });
 
-        return NextResponse.json(deletedProduct);
+        return NextResponse.json(deletedProduct); // Retourne les données du produit supprimé
     } catch (error) {
         return NextResponse.json(
             { error: (error as Error).message || "Une erreur est survenue" },
