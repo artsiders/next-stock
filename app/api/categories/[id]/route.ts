@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = params;
+        const resolvedParams = await params;
         const data = await request.json();
 
         const updatedCategory = await prisma.category.update({
-            where: { id: parseInt(id) },
+            where: { id: parseInt(resolvedParams.id) },
             data,
         });
 
@@ -20,13 +20,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = params; // Pas besoin d'attendre avec await pour params
+        const resolvedParams = await params;
 
-        // Suppression du produit dans la base de données
         const deletedProduct = await prisma.category.delete({
-            where: { id: parseInt(id) },
+            where: { id: parseInt(resolvedParams.id) },
         });
 
         return NextResponse.json(deletedProduct); // Retourne les données du produit supprimé

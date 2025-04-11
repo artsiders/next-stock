@@ -6,15 +6,13 @@ import { ArrowLeft } from "lucide-react"
 import { notFound } from "next/navigation"
 import { getCategories, getProductById, getSuppliers } from "@/lib/data"
 
-// Define the props type for clarity
-interface EditProjectPageProps {
-    params: Promise<{ id: string }> | { id: string }; // Account for both sync and async params
-}
-
-export default async function EditProjectPage({ params }: EditProjectPageProps) {
-    // Resolve params if it's a Promise (for App Router 14+ compatibility)
-    const resolvedParams = await params;
-    const product = await getProductById(Number.parseInt(resolvedParams.id));
+export default async function EditProjectPage({
+    params,
+}: {
+    params: Promise<{ id: string }>
+}) {
+    const { id } = await params
+    const product = await getProductById(Number.parseInt(id));
     const categories = await getCategories();
     const suppliers = await getSuppliers();
 

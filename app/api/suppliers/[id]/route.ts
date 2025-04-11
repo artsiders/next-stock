@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// export async function PUT(request: Request, { params }: { params: { id: string } }) {
+// export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
 //     try {
-//         const { id } = params;
+//         const resolvedParams = await params;
 //         const data = await request.json();
 
 //         const updatedCategory = await prisma.supplier.update({
-//             where: { id: parseInt(id) },
+//             where: { id: parseInt(resolvedParams.id) },
 //             data,
 //         });
 
@@ -20,13 +20,13 @@ import { prisma } from '@/lib/prisma';
 //     }
 // }
 
-// export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+// export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
 //     try {
-//         const { id } = params; // Pas besoin d'attendre avec await pour params
+//         const resolvedParams = await params; // Pas besoin d'attendre avec await pour params
 
 //         // Suppression du produit dans la base de données
 //         const deletedProduct = await prisma.supplier.delete({
-//             where: { id: parseInt(id) },
+//             where: { id: parseInt(resolvedParams.id) },
 //         });
 
 //         return NextResponse.json(deletedProduct); // Retourne les données du produit supprimé
@@ -38,12 +38,11 @@ import { prisma } from '@/lib/prisma';
 //     }
 // }
 
-export async function GET(
-    request: Request,
-    { params }: { params: { id: string } }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = parseInt(params.id);
+        const resolvedParams = await params;
+        const id = parseInt(resolvedParams.id);
+
 
         if (isNaN(id)) {
             return NextResponse.json(
@@ -73,12 +72,11 @@ export async function GET(
     }
 }
 
-export async function PUT(
-    request: Request,
-    { params }: { params: { id: string } }
-) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = parseInt(params.id);
+        const resolvedParams = await params;
+        const id = parseInt(resolvedParams.id);
+
         const data = await request.json();
 
         if (isNaN(id)) {
@@ -128,12 +126,11 @@ export async function PUT(
     }
 }
 
-export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = parseInt(params.id);
+        const resolvedParams = await params;
+        const id = parseInt(resolvedParams.id);
+
 
         if (isNaN(id)) {
             return NextResponse.json(

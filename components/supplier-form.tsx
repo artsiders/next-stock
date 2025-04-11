@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import axios from "axios"
 import { Supplier } from "@prisma/client";
 
-export default function NewSupplierForm({ supplier }: { supplier: Supplier }) {
+export default function NewSupplierForm({ supplier }: { supplier?: Supplier }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

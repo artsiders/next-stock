@@ -6,13 +6,13 @@ import { ArrowLeft } from "lucide-react"
 import { notFound } from "next/navigation"
 import { getCategorieById } from "@/lib/data"
 
-interface Props {
-    params: Promise<{ id: string }> | { id: string };
-}
-
-export default async function EditCategoryPage({ params }: Props) {
-    const resolvedParams = await params;
-    const category = await getCategorieById(Number.parseInt(resolvedParams.id));
+export default async function EditCategoryPage({
+    params,
+}: {
+    params: Promise<{ id: string }>
+}) {
+    const { id } = await params
+    const category = await getCategorieById(Number.parseInt(id));
 
     if (!category) {
         notFound();

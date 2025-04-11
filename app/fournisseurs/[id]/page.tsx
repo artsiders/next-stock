@@ -6,13 +6,14 @@ import { ArrowLeft } from "lucide-react"
 import { notFound } from "next/navigation"
 import { getSupplierById } from "@/lib/data"
 
-interface Props {
-    params: Promise<{ id: string }> | { id: string };
-}
 
-export default async function EditProjectPage({ params }: Props) {
-    const resolvedParams = await params;
-    const product = await getSupplierById(Number.parseInt(resolvedParams.id));
+export default async function EditProjectPage({
+    params,
+}: {
+    params: Promise<{ id: string }>
+}) {
+    const { id } = await params
+    const product = await getSupplierById(Number.parseInt(id));
 
     if (!product) {
         notFound();
