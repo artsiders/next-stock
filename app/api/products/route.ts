@@ -13,3 +13,25 @@ export async function POST(request: Request) {
         );
     }
 }
+
+export async function GET() {
+    try {
+        const products = await prisma.product.findMany({
+            include: {
+                category: true,
+                supplier: true,
+            },
+            orderBy: {
+                name: 'asc',
+            },
+        });
+
+        return NextResponse.json(products);
+    } catch (error) {
+        console.error("Erreur lors de la récupération des produits:", error);
+        return NextResponse.json(
+            { error: "Erreur serveur lors de la récupération des produits" },
+            { status: 500 }
+        );
+    }
+}

@@ -1,661 +1,414 @@
-// app/dashboard/approvisionnements/page.tsx
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { Plus, Search, CheckCircle2, CalendarIcon, Trash2, FileEdit } from "lucide-react";
-
+import { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/use-toast";
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
+import { Plus, Loader2, Info, Package, PackageCheck, PackageX, RefreshCw } from "lucide-react";
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
-// Types
-type Product = {
-    id: number;
-    name: string;
-    sku: string;
-    costPrice: number;
-};
-
+// Types basés sur le schéma Prisma
 type Supplier = {
     id: number;
     name: string;
+    email: string | null;
+    phone: string | null;
 };
 
-type Supply = {
+type Product = {
     id: number;
-    date: string;
+    name: string;
+    description: string | null;
     quantity: number;
+    minQuantity: number;
     unitPrice: number;
-    product: Product;
-    supplier: Supplier | null;
+    costPrice: number;
+    categoryId: number;
+    supplierId: number;
     createdAt: string;
+    updatedAt: string;
+    category: {
+        id: number;
+        name: string;
+    };
+    supplier: {
+        id: number;
+        name: string;
+    };
 };
 
-// Schéma de validation Zod
-const supplyFormSchema = z.object({
-    productId: z.number({
-        required_error: "Veuillez sélectionner un produit",
-    }),
-    quantity: z.number({
-        required_error: "La quantité est requise",
-    }).positive("La quantité doit être positive"),
-    date: z.date({
-        required_error: "La date est requise",
-    }),
-    supplierId: z.number().nullable().optional(),
-    unitPrice: z.number().positive("Le prix unitaire doit être positif").optional(),
-    notes: z.string().optional(),
+type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
+
+type StockMovement = {
+    id: number;
+    productId: number;
+    type: MovementType;
+    quantity: number;
+    date: string;
+    note: string | null;
+    product: Product;
+};
+
+// Schéma Zod pour la validation du formulaire
+const stockMovementSchema = z.object({
+    productId: z.string().min(1, { message: "Le produit est requis" }),
+    quantity: z.number().positive({ message: "La quantité doit être un nombre positif" }),
+    note: z.string().optional(),
+    date: z.string().optional()
 });
 
-type SupplyFormValues = z.infer<typeof supplyFormSchema>;
+type StockMovementFormValues = z.infer<typeof stockMovementSchema>;
 
-export default function ApprovisionnementPage() {
+export default function ApprovisionementPage() {
     const [products, setProducts] = useState<Product[]>([]);
+    const [movements, setMovements] = useState<StockMovement[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    const [supplies, setSupplies] = useState<Supply[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-    const [open, setOpen] = useState(false);
-    const [openSupplier, setOpenSupplier] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [editingSupply, setEditingSupply] = useState<Supply | null>(null);
-    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedMovement, setSelectedMovement] = useState<StockMovement | null>(null);
 
-    // Initialiser le formulaire
-    const form = useForm<SupplyFormValues>({
-        resolver: zodResolver(supplyFormSchema),
+    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<StockMovementFormValues>({
+        resolver: zodResolver(stockMovementSchema),
         defaultValues: {
+            productId: '',
             quantity: 1,
-            date: new Date(),
-            supplierId: null,
-            notes: "",
-        },
+            note: '',
+            date: new Date().toISOString().substring(0, 10)
+        }
     });
 
-    // Charger les données initiales
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const [productsRes, suppliersRes, suppliesRes] = await Promise.all([
-                    fetch("/api/products"),
-                    fetch("/api/suppliers"),
-                    fetch("/api/supplies"),
-                ]);
-
-                if (!productsRes.ok || !suppliersRes.ok || !suppliesRes.ok) {
-                    throw new Error("Erreur lors du chargement des données");
-                }
-
-                const productsData = await productsRes.json();
-                const suppliersData = await suppliersRes.json();
-                const suppliesData = await suppliesRes.json();
-
+        Promise.all([
+            fetch('/api/products').then(res => res.json()),
+            fetch('/api/stockmovements').then(res => res.json()),
+            fetch('/api/suppliers').then(res => res.json())
+        ])
+            .then(([productsData, movementsData, suppliersData]) => {
                 setProducts(productsData);
+                setMovements(movementsData);
                 setSuppliers(suppliersData);
-                setSupplies(suppliesData);
-            } catch (err) {
-                setError("Impossible de charger les données. Veuillez réessayer.");
-                console.error(err);
-            } finally {
                 setLoading(false);
-            }
-        };
-
-        fetchData();
+            })
+            .catch(error => {
+                console.error("Erreur lors du chargement des données:", error);
+                toast({
+                    title: "Erreur",
+                    description: "Impossible de charger les données. Veuillez réessayer.",
+                    variant: "destructive"
+                });
+                setLoading(false);
+            });
     }, []);
 
-    // Mettre à jour le formulaire quand on édite un approvisionnement
-    useEffect(() => {
-        if (editingSupply) {
-            form.reset({
-                productId: editingSupply.product.id,
-                quantity: editingSupply.quantity,
-                date: new Date(editingSupply.date),
-                supplierId: editingSupply.supplier?.id || null,
-                unitPrice: editingSupply.unitPrice,
-            });
-            setSelectedProduct(editingSupply.product);
-        }
-    }, [editingSupply, form]);
+    const onSubmit = async (data: StockMovementFormValues) => {
+        setSubmitting(true);
 
-    // Filtrer les produits par recherche
-    const filteredProducts = products.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.sku.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    // Gérer la soumission du formulaire
-    const onSubmit = async (values: SupplyFormValues) => {
-        setIsSubmitting(true);
         try {
-            const endpoint = editingSupply
-                ? `/api/supplies/${editingSupply.id}`
-                : "/api/supplies";
-
-            const method = editingSupply ? "PUT" : "POST";
-
-            const response = await fetch(endpoint, {
-                method,
+            const response = await fetch('/api/stockmovements', {
+                method: 'POST',
                 headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    ...values,
-                    date: values.date.toISOString(),
-                    unitPrice: values.unitPrice || (selectedProduct?.costPrice || 0),
+                    productId: parseInt(data.productId),
+                    type: 'IN',
+                    quantity: data.quantity,
+                    date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
+                    note: data.note || null,
                 }),
             });
 
             if (!response.ok) {
-                throw new Error("Erreur lors de l'enregistrement");
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Une erreur est survenue");
             }
 
-            // Rafraîchir la liste des approvisionnements
-            const updatedSuppliesRes = await fetch("/api/supplies");
-            const updatedSupplies = await updatedSuppliesRes.json();
-            setSupplies(updatedSupplies);
+            const newMovement = await response.json();
+
+            // Mettre à jour la liste des mouvements et des produits
+            fetch('/api/stockmovements')
+                .then(res => res.json())
+                .then(data => setMovements(data));
+
+            fetch('/api/products')
+                .then(res => res.json())
+                .then(data => setProducts(data));
 
             toast({
-                title: editingSupply ? "Approvisionnement mis à jour" : "Approvisionnement ajouté",
-                description: `Opération effectuée avec succès`,
-                variant: "default",
+                title: "Succès",
+                description: "Approvisionnement enregistré avec succès.",
             });
 
-            // Réinitialiser le formulaire
-            form.reset({
-                productId: undefined,
-                quantity: 1,
-                date: new Date(),
-                supplierId: null,
-                unitPrice: undefined,
-                notes: "",
-            });
-            setSelectedProduct(null);
-            setEditingSupply(null);
-        } catch (err) {
-            console.error(err);
+            reset();
+        } catch (error) {
+            console.error("Erreur lors de l'approvisionnement:", error);
             toast({
                 title: "Erreur",
-                description: "Une erreur est survenue lors de l'enregistrement",
-                variant: "destructive",
+                description: error instanceof Error ? error.message : "Une erreur est survenue",
+                variant: "destructive"
             });
         } finally {
-            setIsSubmitting(false);
+            setSubmitting(false);
         }
     };
 
-    // Supprimer un approvisionnement
-    const handleDelete = async (id: number) => {
+    const handleDeleteMovement = async () => {
+        if (!selectedMovement) return;
+
         try {
-            const response = await fetch(`/api/supplies/${id}`, {
-                method: "DELETE",
+            const response = await fetch(`/api/stockmovements/${selectedMovement.id}`, {
+                method: 'DELETE',
             });
 
             if (!response.ok) {
-                throw new Error("Erreur lors de la suppression");
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Une erreur est survenue");
             }
 
-            // Rafraîchir la liste
-            setSupplies(supplies.filter((supply) => supply.id !== id));
+            // Mettre à jour la liste des mouvements et des produits
+            fetch('/api/stockmovements')
+                .then(res => res.json())
+                .then(data => setMovements(data));
+
+            fetch('/api/products')
+                .then(res => res.json())
+                .then(data => setProducts(data));
 
             toast({
-                title: "Approvisionnement supprimé",
-                description: "L'approvisionnement a été supprimé avec succès",
-                variant: "default",
+                title: "Succès",
+                description: "Mouvement supprimé avec succès.",
             });
-
-            setConfirmDeleteId(null);
-        } catch (err) {
-            console.error(err);
+        } catch (error) {
+            console.error("Erreur lors de la suppression du mouvement:", error);
             toast({
                 title: "Erreur",
-                description: "Une erreur est survenue lors de la suppression",
-                variant: "destructive",
+                description: error instanceof Error ? error.message : "Une erreur est survenue",
+                variant: "destructive"
             });
+        } finally {
+            setIsDialogOpen(false);
+            setSelectedMovement(null);
         }
     };
 
-    // Quand un produit est sélectionné, mettre à jour le prix unitaire
-    const handleProductSelect = (productId: number) => {
-        const product = products.find((p) => p.id === productId);
-        setSelectedProduct(product || null);
-
-        if (product && !form.getValues().unitPrice) {
-            form.setValue("unitPrice", product.costPrice);
-        }
+    const confirmDelete = (movement: StockMovement) => {
+        setSelectedMovement(movement);
+        setIsDialogOpen(true);
     };
 
-    // Fonction pour formater le prix
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat("fr-FR", {
-            style: "currency",
-            currency: "EUR",
-        }).format(price);
-    };
+    const filteredMovements = selectedSupplier === 'all'
+        ? movements.filter(m => m.type === 'IN')
+        : movements.filter(m => m.type === 'IN' && m.product.supplierId === parseInt(selectedSupplier));
+
+    const filteredProducts = selectedSupplier === 'all'
+        ? products
+        : products.filter(p => p.supplierId === parseInt(selectedSupplier));
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-[calc(100vh-120px)]">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <span className="ml-2 text-lg">Chargement...</span>
+            </div>
+        );
+    }
 
     return (
-        <div className="container mx-auto py-6">
-            <h1 className="text-3xl font-bold mb-6">Gestion des Approvisionnements</h1>
+        <div className="container mx-auto py-8">
+            <h1 className="text-3xl font-bold mb-8">Gestion des Approvisionnements</h1>
 
-            {error && (
-                <Alert variant="destructive" className="mb-6">
-                    <AlertTitle>Erreur</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Formulaire d'approvisionnement */}
-                <Card className="md:col-span-1">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <Card className="lg:col-span-1">
                     <CardHeader>
-                        <CardTitle>
-                            {editingSupply ? "Modifier l'approvisionnement" : "Nouvel approvisionnement"}
+                        <CardTitle className="flex items-center">
+                            <Plus className="mr-2 h-5 w-5" />
+                            Nouvel Approvisionnement
                         </CardTitle>
-                        <CardDescription>
-                            Enregistrez une nouvelle entrée de stock
-                        </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                {/* Sélection du produit */}
-                                <FormField
-                                    control={form.control}
-                                    name="productId"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                            <FormLabel>Produit</FormLabel>
-                                            <Popover open={open} onOpenChange={setOpen}>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant="outline"
-                                                            role="combobox"
-                                                            aria-expanded={open}
-                                                            className="justify-between w-full"
-                                                        >
-                                                            {field.value
-                                                                ? products.find(
-                                                                    (product) => product.id === field.value
-                                                                )?.name
-                                                                : "Sélectionner un produit"}
-                                                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-[300px] p-0">
-                                                    <Command>
-                                                        <CommandInput
-                                                            placeholder="Rechercher un produit..."
-                                                            onValueChange={setSearchQuery}
-                                                        />
-                                                        <CommandEmpty>Aucun produit trouvé.</CommandEmpty>
-                                                        <CommandGroup className="max-h-60 overflow-y-auto">
-                                                            {filteredProducts.map((product) => (
-                                                                <CommandItem
-                                                                    key={product.id}
-                                                                    value={product.name}
-                                                                    onSelect={() => {
-                                                                        form.setValue("productId", product.id);
-                                                                        handleProductSelect(product.id);
-                                                                        setOpen(false);
-                                                                    }}
-                                                                >
-                                                                    <CheckCircle2
-                                                                        className={`mr-2 h-4 w-4 ${field.value === product.id
-                                                                            ? "opacity-100"
-                                                                            : "opacity-0"
-                                                                            }`}
-                                                                    />
-                                                                    <div className="flex-1">
-                                                                        <p className="font-medium">{product.name}</p>
-                                                                        <p className="text-xs text-muted-foreground">
-                                                                            SKU: {product.sku}
-                                                                        </p>
-                                                                    </div>
-                                                                </CommandItem>
-                                                            ))}
-                                                        </CommandGroup>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="supplierId">Fournisseur</Label>
+                                <Select
+                                    onValueChange={(value) => setSelectedSupplier(value)}
+                                    value={selectedSupplier}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Sélectionner un fournisseur" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Tous les fournisseurs</SelectItem>
+                                        {suppliers.map((supplier) => (
+                                            <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                                                {supplier.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                                {/* Quantité */}
-                                <FormField
-                                    control={form.control}
-                                    name="quantity"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Quantité reçue</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    min="1"
-                                                    {...field}
-                                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                            <div className="space-y-2">
+                                <Label htmlFor="productId">Produit</Label>
+                                <Select onValueChange={(value) => setValue('productId', value)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Sélectionner un produit" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {filteredProducts.map((product) => (
+                                            <SelectItem key={product.id} value={product.id.toString()}>
+                                                {product.name} - {product.quantity} en stock
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.productId && (
+                                    <p className="text-sm text-red-500">{errors.productId.message}</p>
+                                )}
+                            </div>
 
-                                {/* Date */}
-                                <FormField
-                                    control={form.control}
-                                    name="date"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                            <FormLabel>Date de réception</FormLabel>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant={"outline"}
-                                                            className="w-full pl-3 text-left font-normal"
-                                                        >
-                                                            {field.value ? (
-                                                                format(field.value, "P", { locale: fr })
-                                                            ) : (
-                                                                <span>Choisir une date</span>
-                                                            )}
-                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={field.value}
-                                                        onSelect={field.onChange}
-                                                        initialFocus
-                                                        locale={fr}
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                            <div className="space-y-2">
+                                <Label htmlFor="quantity">Quantité</Label>
+                                <Input
+                                    id="quantity"
+                                    type="number"
+                                    min="1"
+                                    {...register("quantity", { valueAsNumber: true })}
                                 />
+                                {errors.quantity && (
+                                    <p className="text-sm text-red-500">{errors.quantity.message}</p>
+                                )}
+                            </div>
 
-                                {/* Fournisseur (optionnel) */}
-                                <FormField
-                                    control={form.control}
-                                    name="supplierId"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                            <FormLabel>Fournisseur (optionnel)</FormLabel>
-                                            <Popover open={openSupplier} onOpenChange={setOpenSupplier}>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant="outline"
-                                                            role="combobox"
-                                                            aria-expanded={openSupplier}
-                                                            className="justify-between w-full"
-                                                        >
-                                                            {field.value
-                                                                ? suppliers.find(
-                                                                    (supplier) => supplier.id === field.value
-                                                                )?.name
-                                                                : "Sélectionner un fournisseur"}
-                                                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-[300px] p-0">
-                                                    <Command>
-                                                        <CommandInput placeholder="Rechercher un fournisseur..." />
-                                                        <CommandEmpty>Aucun fournisseur trouvé.</CommandEmpty>
-                                                        <CommandGroup>
-                                                            {suppliers.map((supplier) => (
-                                                                <CommandItem
-                                                                    key={supplier.id}
-                                                                    value={supplier.name}
-                                                                    onSelect={() => {
-                                                                        form.setValue("supplierId", supplier.id);
-                                                                        setOpenSupplier(false);
-                                                                    }}
-                                                                >
-                                                                    <CheckCircle2
-                                                                        className={`mr-2 h-4 w-4 ${field.value === supplier.id
-                                                                            ? "opacity-100"
-                                                                            : "opacity-0"
-                                                                            }`}
-                                                                    />
-                                                                    {supplier.name}
-                                                                </CommandItem>
-                                                            ))}
-                                                        </CommandGroup>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
-                                            <FormDescription>
-                                                Laissez vide si aucun fournisseur n'est associé
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                            <div className="space-y-2">
+                                <Label htmlFor="date">Date</Label>
+                                <Input
+                                    id="date"
+                                    type="date"
+                                    {...register("date")}
                                 />
+                            </div>
 
-                                {/* Prix unitaire */}
-                                <FormField
-                                    control={form.control}
-                                    name="unitPrice"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Prix unitaire (€)</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    placeholder={selectedProduct ? selectedProduct.costPrice.toString() : "0.00"}
-                                                    {...field}
-                                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Prix d'achat unitaire (par défaut: prix actuel du produit)
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                            <div className="space-y-2">
+                                <Label htmlFor="note">Note</Label>
+                                <Textarea
+                                    id="note"
+                                    placeholder="Notes supplémentaires..."
+                                    {...register("note")}
                                 />
+                            </div>
 
-                                {/* Notes */}
-                                <FormField
-                                    control={form.control}
-                                    name="notes"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Notes (optionnel)</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} placeholder="Ajouter des notes sur cet approvisionnement" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </form>
-                        </Form>
+                            <Button type="submit" className="w-full" disabled={submitting}>
+                                {submitting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Enregistrement...
+                                    </>
+                                ) : (
+                                    <>
+                                        <PackageCheck className="mr-2 h-4 w-4" />
+                                        Enregistrer l'approvisionnement
+                                    </>
+                                )}
+                            </Button>
+                        </form>
                     </CardContent>
-                    <CardFooter className="flex justify-between">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                form.reset({
-                                    productId: undefined,
-                                    quantity: 1,
-                                    date: new Date(),
-                                    supplierId: null,
-                                    unitPrice: undefined,
-                                    notes: "",
-                                });
-                                setSelectedProduct(null);
-                                setEditingSupply(null);
-                            }}
-                        >
-                            {editingSupply ? "Annuler" : "Réinitialiser"}
-                        </Button>
-                        <Button
-                            onClick={form.handleSubmit(onSubmit)}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <span className="animate-spin mr-2">⊚</span>
-                                    Traitement...
-                                </>
-                            ) : (
-                                <>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    {editingSupply ? "Mettre à jour" : "Ajouter"}
-                                </>
-                            )}
-                        </Button>
-                    </CardFooter>
                 </Card>
 
-                {/* Liste des approvisionnements */}
-                <Card className="md:col-span-2">
+                <Card className="lg:col-span-2">
                     <CardHeader>
-                        <CardTitle>Historique des approvisionnements</CardTitle>
-                        <CardDescription>
-                            Les {supplies.length} derniers approvisionnements enregistrés
-                        </CardDescription>
+                        <CardTitle className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <Package className="mr-2 h-5 w-5" />
+                                Historique des Approvisionnements
+                            </div>
+                            <Button variant="outline" size="sm" onClick={() => {
+                                setLoading(true);
+                                fetch('/api/stockmovements')
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        setMovements(data);
+                                        setLoading(false);
+                                    });
+                            }}>
+                                <RefreshCw className="h-4 w-4 mr-1" />
+                                Actualiser
+                            </Button>
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {loading ? (
-                            <div className="flex justify-center items-center h-64">
-                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                        {filteredMovements.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8 text-center">
+                                <Info className="h-12 w-12 text-gray-400 mb-2" />
+                                <p className="text-lg font-medium">Aucun approvisionnement trouvé</p>
+                                <p className="text-sm text-gray-500">Les approvisionnements apparaîtront ici</p>
                             </div>
-                        ) : supplies.length > 0 ? (
-                            <Table>
-                                <TableCaption>Liste des approvisionnements récents</TableCaption>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Produit</TableHead>
-                                        <TableHead>Quantité</TableHead>
-                                        <TableHead>Prix unitaire</TableHead>
-                                        <TableHead>Fournisseur</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {supplies.map((supply) => (
-                                        <TableRow key={supply.id}>
-                                            <TableCell>{format(new Date(supply.date), "dd/MM/yyyy")}</TableCell>
-                                            <TableCell>
-                                                <div>
-                                                    <p className="font-medium">{supply.product.name}</p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        SKU: {supply.product.sku}
-                                                    </p>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>{supply.quantity}</TableCell>
-                                            <TableCell>{formatPrice(supply.unitPrice)}</TableCell>
-                                            <TableCell>{supply.supplier?.name || "-"}</TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => setEditingSupply(supply)}
-                                                    >
-                                                        <FileEdit className="h-4 w-4" />
-                                                    </Button>
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() => setConfirmDeleteId(supply.id)}
-                                                            >
-                                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                                            </Button>
-                                                        </DialogTrigger>
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogTitle>Confirmer la suppression</DialogTitle>
-                                                                <DialogDescription>
-                                                                    Êtes-vous sûr de vouloir supprimer cet approvisionnement ?
-                                                                    Cette action ne peut pas être annulée.
-                                                                </DialogDescription>
-                                                            </DialogHeader>
-                                                            <DialogFooter className="gap-2">
-                                                                <DialogClose asChild>
-                                                                    <Button variant="outline">Annuler</Button>
-                                                                </DialogClose>
-                                                                <Button
-                                                                    variant="destructive"
-                                                                    onClick={() => confirmDeleteId && handleDelete(confirmDeleteId)}
-                                                                >
-                                                                    Supprimer
-                                                                </Button>
-                                                            </DialogFooter>
-                                                        </DialogContent>
-                                                    </Dialog>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
                         ) : (
-                            <div className="flex flex-col items-center justify-center h-64">
-                                <p className="text-muted-foreground mb-4">
-                                    Aucun approvisionnement enregistré
-                                </p>
-                                <Button variant="outline" onClick={() => form.setFocus("productId")}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Ajouter un approvisionnement
-                                </Button>
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Produit</TableHead>
+                                            {/* <TableHead>Fournisseur</TableHead> */}
+                                            <TableHead>Quantité</TableHead>
+                                            <TableHead>Note</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredMovements.map((movement) => (
+                                            <TableRow key={movement.id}>
+                                                <TableCell>{format(new Date(movement.date), 'dd/MM/yyyy', { locale: fr })}</TableCell>
+                                                <TableCell>{movement.product.name}</TableCell>
+                                                {/* <TableCell>{movement.product.supplier?.name}</TableCell> */}
+                                                <TableCell>{movement.quantity}</TableCell>
+                                                <TableCell>{movement.note || '-'}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => confirmDelete(movement)}
+                                                    >
+                                                        <PackageX className="h-4 w-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
                             </div>
                         )}
                     </CardContent>
                 </Card>
             </div>
+
+            <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Êtes-vous sûr de vouloir supprimer cet approvisionnement ?
+                            Cette action annulera l'ajout de {selectedMovement?.quantity} unités de {selectedMovement?.product.name}.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteMovement}>Supprimer</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
