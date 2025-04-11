@@ -62,6 +62,16 @@ export default function RootLayout({
                 </NavigationMenuItem>
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
+                    <Link href="/sorties-stock">
+                      <Button variant="outline" className="flex gap-2 items-center">
+                        <Folder className="w-5 h-5" />
+                        sorties stock
+                      </Button>
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
                     <Link href="/produits">
                       <Button variant="outline" className="flex gap-2 items-center">
                         <Folder className="w-5 h-5" />
