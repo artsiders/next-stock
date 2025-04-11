@@ -1,22 +1,18 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import ProductForm from "@/components/product-form"
+import SupplierForm from "@/components/supplier-form"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { notFound } from "next/navigation"
-import { getCategories, getProductById, getSuppliers } from "@/lib/data"
+import { getSupplierById } from "@/lib/data"
 
-// Define the props type for clarity
-interface EditProjectPageProps {
-    params: Promise<{ id: string }> | { id: string }; // Account for both sync and async params
+interface Props {
+    params: Promise<{ id: string }> | { id: string };
 }
 
-export default async function EditProjectPage({ params }: EditProjectPageProps) {
-    // Resolve params if it's a Promise (for App Router 14+ compatibility)
+export default async function EditProjectPage({ params }: Props) {
     const resolvedParams = await params;
-    const product = await getProductById(Number.parseInt(resolvedParams.id));
-    const categories = await getCategories();
-    const suppliers = await getSuppliers();
+    const product = await getSupplierById(Number.parseInt(resolvedParams.id));
 
     if (!product) {
         notFound();
@@ -35,7 +31,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
                     <CardTitle>Modifier Projet</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ProductForm product={product} categories={categories} suppliers={suppliers} />
+                    <SupplierForm supplier={product} />
                 </CardContent>
             </Card>
         </div>

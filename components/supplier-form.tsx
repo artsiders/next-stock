@@ -9,20 +9,21 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import axios from "axios"
+import { Supplier } from "@prisma/client";
 
-export default function NewSupplierForm() {
+export default function NewSupplierForm({ supplier }: { supplier: Supplier }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // État du formulaire
+  const isEditMode = !!supplier;
+
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
+    name: supplier?.name || "",
+    email: supplier?.email || "",
+    phone: supplier?.phone || "",
   });
 
-  // Gérer les changements des champs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -37,12 +38,17 @@ export default function NewSupplierForm() {
     setError("");
 
     try {
-      await axios.post("/api/suppliers", formData);
-      router.push("/fournisseurs");
+      if (isEditMode) {
+        await axios.put(`/api/suppliers/${supplier.id}`, formData);
+        window.history.back();
+      } else {
+        await axios.post("/api/suppliers", formData);
+        window.history.back();
+      }
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError("Une erreur est survenue");
-        console.log(err.response?.data?.error);
+        setError("Une erreur est survenue lors de l'enregistrement");
+        console.error(err.response?.data?.error);
       } else {
         setError("Une erreur inconnue est survenue");
       }
