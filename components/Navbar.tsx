@@ -3,15 +3,15 @@ import Link from "next/link"
 import { usePathname } from 'next/navigation'
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from "@radix-ui/react-navigation-menu"
 import { Button } from "@/components/ui/button"
-import { Package, Folder, Truck, HomeIcon } from "lucide-react"
+import { Package, Folder, Truck, HomeIcon, ChartArea, ArrowDownToLine, ArrowUpToLine } from "lucide-react"
 
 export default function Navbar() {
     const pathname = usePathname();
 
     const navItems = [
-        { href: '/', label: 'Statistics', icon: <Folder className="w-5 h-5" /> },
-        { href: '/approvisionnements', label: 'Approvisionnements', icon: <Folder className="w-5 h-5" /> },
-        { href: '/sorties-stock', label: 'Sorties stock', icon: <Folder className="w-5 h-5" /> },
+        { href: '/', label: 'Statistics', icon: <ChartArea className="w-5 h-5" /> },
+        { href: '/approvisionnements', label: 'Approvisionnements', icon: <ArrowDownToLine className="w-5 h-5" /> },
+        { href: '/sorties-stock', label: 'Sorties stock', icon: <ArrowUpToLine className="w-5 h-5" /> },
         { href: '/produits', label: 'Produits', icon: <Folder className="w-5 h-5" /> },
         { href: '/categories', label: 'Catégories', icon: <Package className="w-5 h-5" /> },
         { href: '/fournisseurs', label: 'Fournisseurs', icon: <Truck className="w-5 h-5" /> },
