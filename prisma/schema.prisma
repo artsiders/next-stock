@@ -9,6 +9,21 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  role      Role     @default(USER)
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
 model Category {
   id       Int       @id @default(autoincrement())
   name     String
