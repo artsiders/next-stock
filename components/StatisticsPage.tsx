@@ -220,7 +220,8 @@ export default function StatisticsPage() {
                     </div>
 
                     {/* Section valeur */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    {/* TODO: unhide when solve */}
+                    <div className="@grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 hidden">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Valeur totale stock</CardTitle>
