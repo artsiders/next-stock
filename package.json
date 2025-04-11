@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -p 3009",
+    "start": "next start",
     "seed": "ts-node --transpile-only prisma/seed.ts",
     "lint": "next lint"
   },
