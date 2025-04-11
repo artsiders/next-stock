@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Package, Folder, Truck } from "lucide-react"
+import StatisticsPage from "@/components/StatisticsPage"
 
 export default function Home() {
   return (
@@ -25,6 +26,9 @@ export default function Home() {
             <span className="text-lg">Gérer le Fournisseurs</span>
           </Button>
         </Link>
+      </div>
+      <div>
+        <StatisticsPage />
       </div>
     </div>
   )
