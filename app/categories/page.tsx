@@ -1,11 +1,9 @@
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, PlusCircle } from "lucide-react"
 import Link from "next/link"
-import { getCategories } from "@/lib/data"
 import CategoriesList from "@/components/categories-list"
 
 export default async function ProjectsPage() {
-    const categories = await getCategories()
 
     return (
         <div className="container mx-auto py-10">
@@ -24,7 +22,7 @@ export default async function ProjectsPage() {
                     </Button>
                 </Link>
             </div>
-            <CategoriesList categories={categories} />
+            <CategoriesList />
         </div>
     )
 }

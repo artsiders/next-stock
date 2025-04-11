@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2 } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,23 +18,50 @@ import {
 import { Product } from "@prisma/client"
 import axios from "axios"
 
-export default function ProductList({ products }: { products: Product[] }) {
+export default function ProductList() {
+
+  const [products, setProducts] = useState<Product[]>([])
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Fetch products if they weren't provided as props
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+
+  const fetchProducts = async () => {
+    setIsLoading(true)
+    try {
+      const response = await axios.get('/api/products')
+      setProducts(response.data)
+    } catch (error) {
+      console.error('Erreur lors de la récupération des produits:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleDelete = async () => {
     if (productToDelete) {
       try {
-        await axios.delete(`/api/products/${productToDelete}`);
-        setIsDeleteDialogOpen(false);
+        await axios.delete(`/api/products/${productToDelete}`)
+        // Mettre à jour la liste des produits après la suppression
+        setProducts(products.filter(product => product.id !== productToDelete))
+        setIsDeleteDialogOpen(false)
       } catch (error) {
-        console.error('Erreur lors de la suppression du produit:', error);
+        console.error('Erreur lors de la suppression du produit:', error)
       }
     }
   }
+
   const openDeleteDialog = (id: number) => {
     setProductToDelete(id)
     setIsDeleteDialogOpen(true)
+  }
+
+  if (isLoading) {
+    return <div className="text-center py-4">Chargement des produits...</div>
   }
 
   return (
@@ -51,14 +78,14 @@ export default function ProductList({ products }: { products: Product[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products?.length === 0 ? (
+          {products.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center">
                 Aucun produit trouvé
               </TableCell>
             </TableRow>
           ) : (
-            products?.map((product) => (
+            products.map((product) => (
               <TableRow key={product.id}>
                 <TableCell>{product.id}</TableCell>
                 <TableCell>{product.name}</TableCell>

@@ -13,3 +13,16 @@ export async function POST(request: Request) {
         );
     }
 }
+
+export async function GET() {
+    try {
+        const categories = await prisma.category.findMany();
+        return NextResponse.json(categories);
+    } catch (error) {
+        console.error("Erreur lors de la récupération des categories:", error);
+        return NextResponse.json(
+            { error: "Erreur serveur lors de la récupération des categories" },
+            { status: 500 }
+        );
+    }
+}

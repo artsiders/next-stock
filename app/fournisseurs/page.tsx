@@ -1,12 +1,9 @@
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, PlusCircle } from "lucide-react"
 import Link from "next/link"
-import { getSuppliers } from "@/lib/data"
 import SuppliersList from "@/components/supplier-list"
 
 export default async function SuppliersPage() {
-    const suppliers = await getSuppliers()
-
     return (
         <div className="container mx-auto py-10">
             <Link href="/">
@@ -24,7 +21,7 @@ export default async function SuppliersPage() {
                     </Button>
                 </Link>
             </div>
-            <SuppliersList suppliers={suppliers} />
+            <SuppliersList />
         </div>
     )
 }
