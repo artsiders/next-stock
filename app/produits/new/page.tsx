@@ -9,7 +9,7 @@ export default async function NewProjectPage() {
     const categories = await getCategories();
     const suppliers = await getSuppliers();
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto px-2 py-10">
             <Link href="/produits">
                 <Button variant="ghost" className="mb-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />

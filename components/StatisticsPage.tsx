@@ -109,7 +109,7 @@ export default function StatisticsPage() {
     }, [period, date]);
 
     return (
-        <div className="container mx-auto py-6">
+        <div className="container mx-auto px-2 py-6">
             <h1 className="text-3xl font-bold mb-6">Statistiques de l'inventaire</h1>
 
             {error && (

@@ -5,7 +5,7 @@ import SuppliersList from "@/components/supplier-list"
 
 export default async function SuppliersPage() {
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto px-2 py-10">
             <Link href="/">
                 <Button variant="ghost" className="mb-4">
                     <ArrowLeft className="h-4 w-4" />
